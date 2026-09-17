@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BGM 플레이어 - 무한 감성 음악</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pretendard:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at center, #1a191e 0%, #0d0c0f 100%);
+      --card-bg: rgba(28, 26, 34, 0.75);
+      --card-border: rgba(212, 175, 55, 0.18);
+      --gold-accent: #d4af37;
+      --gold-glow: rgba(212, 175, 55, 0.25);
+      --text-main: #f5f3ef;
+      --text-sub: #a8a39d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 상단 헤더 */
+    .header {
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid var(--card-border);
+      color: var(--gold-accent);
+      font-size: 11px;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      box-shadow: 0 0 8px var(--gold-accent);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+    .title {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    /* 메인 플레이어 카드 */
+    .player-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px 24px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    /* 피아노 건반 비주얼라이저 */
+    .piano-keys {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      height: 52px;
+      margin-bottom: 24px;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      align-items: flex-end;
+    }
+    .key-bar {
+      flex: 1;
+      max-width: 8px;
+      height: 10px;
+      background: rgba(212, 175, 55, 0.25);
+      border-radius: 4px;
+      transition: height 0.15s ease, background 0.2s;
+    }
+    .key-bar.active {
+      background: var(--gold-accent);
+      box-shadow: 0 0 12px var(--gold-accent);
+    }
+
+    /* 현재 악장 표시 */
+    .now-playing {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .now-tag {
+      font-size: 11px;
+      color: var(--gold-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-family: 'Cinzel', serif;
+    }
+    .now-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: #fff;
+    }
+    .now-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* 4대 클래식 무드 그리드 (2x2 균등 배치) */
+    .mood-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .mood-btn {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 14px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: left;
+    }
+    .mood-btn:hover {
+      background: rgba(212, 175, 55, 0.08);
+      border-color: rgba(212, 175, 55, 0.3);
+      color: var(--text-main);
+    }
+    .mood-btn.selected {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--gold-accent);
+      color: #fff;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .mood-icon {
+      font-size: 20px;
+    }
+    .mood-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .mood-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .mood-sub {
+      font-size: 10px;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    /* 메인 재생 버튼 */
+    .control-area {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .play-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%);
+      color: #121015;
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+      transition: all 0.2s;
+    }
+    .play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(212, 175, 55, 0.45);
+    }
+    .play-btn.playing {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(225, 29, 72, 0.3);
+    }
+
+    /* 볼륨 */
+    .vol-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .vol-box input[type="range"] {
+      flex: 1;
+      accent-color: var(--gold-accent);
+      cursor: pointer;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #5a554e;
+      font-family: 'Cinzel', serif;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="header">
+      <div class="badge">
+        <span class="pulse-dot"></span>
+        <span>Perpetual Classic Player</span>
+      </div>
+      <h1 class="title">BGM 플레이어</h1>
+      <p class="subtitle">카페처럼 은은하게 흐르는 무한 어쿠스틱 피아노 BGM</p>
+    </header>
+
+    <!-- 메인 카드 -->
+    <main class="player-card">
+      <!-- 피아노 건반 비주얼라이저 -->
+      <div class="piano-keys" id="pianoKeys"></div>
+
+      <!-- 현재 악장 정보 -->
+      <div class="now-playing">
+        <span class="now-tag">Movement</span>
+        <h2 class="now-title" id="nowTitle">☕ 잔잔한</h2>
+        <p class="now-desc" id="nowDesc">에릭 사티 스타일의 나른하고 우아한 짐노페디 왈츠</p>
+      </div>
+
+      <!-- 5대 클래식 모드 -->
+      <div class="mood-grid">
+        <button class="mood-btn selected" onclick="changeMood('chill')">
+          <span class="mood-icon">☕</span>
+          <div class="mood-info">
+            <span class="mood-name">잔잔한</span>
+            <span class="mood-sub">사티 감성 나른한 왈츠</span>
+          </div>
+        </button>
+
+        <button class="mood-btn" onclick="changeMood('focus')">
+          <span class="mood-icon">⚡</span>
+          <div class="mood-info">
+            <span class="mood-name">집중</span>
+            <span class="mood-sub">바흐 풍의 지적인 아르페지오</span>
+          </div>
+        </button>
+
+        <button class="mood-btn" onclick="changeMood('upbeat')">
+          <span class="mood-icon">✨</span>
+          <div class="mood-info">
+            <span class="mood-name">신나는</span>
+            <span class="mood-sub">모차르트 톤의 화사한 론도</span>
+          </div>
+        </button>
+
+        <button class="mood-btn" onclick="changeMood('sleep')">
+          <span class="mood-icon">🌙</span>
+          <div class="mood-info">
+            <span class="mood-name">수면</span>
+            <span class="mood-sub">깊은 밤 몽환적 앰비언트 패드</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- 컨트롤러 -->
+      <div class="control-area">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">
+          <span id="playIcon">▶</span>
+          <span id="playText">피아노 연주 시작</span>
+        </button>
+
+        <div class="vol-box">
+          <span>음량</span>
+          <input type="range" id="masterVolume" min="0" max="1" step="0.05" value="0.75" oninput="setVolume(this.value)">
+        </div>
+      </div>
+
+      <!-- 쿠팡 파트너스 다이내믹 배너 영역 -->
+      <div class="banner-wrapper" style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px;">
+        <script src="https://ads-partners.coupang.com/g.js"></script>
+        <script>
+            new PartnersCoupang.G({"id":1025528,"trackingCode":"AF4588266","subId":null,"template":"carousel","width":"320","height":"80"});
+        </script>
+        <span style="font-size: 10px; color: #64748b; margin-top: 6px; text-align: center;">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</span>
+      </div>
+    </main>
+
+    <footer class="footer">
+      BGM 플레이어 · Perpetual Classic Piano Variations
+    </footer>
+  </div>
+
+  <script>
+    // ========================================================
+    // 1. 클래식 음악 이론 (화성학, 아르페지오, 음계 주파수 테이블)
+    // ========================================================
+    // 피아노 건반 정밀 주파수 매핑 (A0 = 27.5Hz ~ C8 = 4186Hz)
+    const NOTE_FREQ = {
+      'C2': 65.41, 'D2': 73.42, 'E2': 82.41, 'F2': 87.31, 'G2': 98.00, 'A2': 110.00, 'B2': 123.47,
+      'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94,
+      'C4': 261.63, 'D4': 293.66, 'Eb4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'Ab4': 415.30, 'A4': 440.00, 'Bb4': 466.16, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'Eb5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'Ab5': 830.61, 'A5': 880.00, 'Bb5': 932.33, 'B5': 987.77,
+      'C6': 1046.50, 'D6': 1174.66, 'E6': 1318.51, 'G6': 1567.98
+    };
+
+    // 5대 정통 클래식 악장 설정
+    const CLASSIC_MOODS = {
+      chill: {
+        title: '☕ 잔잔한',
+        desc: '에릭 사티 짐노페디 풍의 지극히 평온하고 따뜻한 피아노 선율',
+        timeSignature: 3, // 3/4박자 왈츠 (쿵-짝-짝)
+        bpm: 58, // 더 느긋하고 평온하게
+        reverbTime: 3.2,
+        // 따뜻하고 안정적인 완전화음 및 9도 모달 진행 (튀는 음 전면 배제)
+        progressions: [
+          { bass: 'G2', chord: ['D3', 'G3', 'B3'], melodyPool: ['D4', 'G4', 'B4', 'D5'] },
+          { bass: 'D2', chord: ['A2', 'D3', 'F#3'], melodyPool: ['D4', 'F#4', 'A4', 'C5'] },
+          { bass: 'E2', chord: ['B2', 'E3', 'G3'], melodyPool: ['E4', 'G4', 'B4', 'E5'] },
+          { bass: 'C2', chord: ['G2', 'C3', 'E3'], melodyPool: ['G3', 'C4', 'E4', 'G4'] }
+        ]
+      },
+      focus: {
+        title: '⚡ 집중',
+        desc: '바흐 평균율 클라비어 풍의 규칙적이고 정갈한 아르페지오',
+        timeSignature: 4, // 4/4박자
+        bpm: 82,
+        reverbTime: 2.2,
+        noise: 'none',
+        // 바흐 평균율 C장조 전주곡 스타일의 유려한 분산화음
+        progressions: [
+          { arpeggio: ['C3', 'E3', 'G3', 'C4', 'E4', 'G3', 'C4', 'E4'] },
+          { arpeggio: ['C3', 'D3', 'A3', 'D4', 'F4', 'A3', 'D4', 'F4'] },
+          { arpeggio: ['B2', 'D3', 'G3', 'D4', 'F4', 'G3', 'D4', 'F4'] },
+          { arpeggio: ['C3', 'E3', 'G3', 'C4', 'E4', 'G3', 'C4', 'E4'] },
+          { arpeggio: ['A2', 'E3', 'A3', 'C4', 'E4', 'A3', 'C4', 'E4'] },
+          { arpeggio: ['D2', 'A2', 'D3', 'F#3', 'C4', 'D3', 'F#3', 'C4'] },
+          { arpeggio: ['G2', 'D3', 'G3', 'B3', 'F4', 'G3', 'B3', 'F4'] },
+          { arpeggio: ['C2', 'G2', 'E3', 'G3', 'C4', 'E3', 'G3', 'C4'] }
+        ]
+      },
+      upbeat: {
+        title: '✨ 신나는',
+        desc: '모차르트 & 쇼팽 왈츠 감성의 밝고 경쾌한 클래식 론도',
+        timeSignature: 3, // 빠른 3박자
+        bpm: 112,
+        reverbTime: 2.0,
+        noise: 'none',
+        progressions: [
+          { bass: 'C3', chord: ['E4', 'G4', 'C5'], melodyPool: ['C5', 'E5', 'G5', 'A5', 'G5'] },
+          { bass: 'F2', chord: ['F4', 'A4', 'C5'], melodyPool: ['A4', 'C5', 'F5', 'E5', 'D5'] },
+          { bass: 'G2', chord: ['D4', 'G4', 'B4'], melodyPool: ['B4', 'D5', 'F5', 'G5', 'E5'] },
+          { bass: 'C3', chord: ['E4', 'G4', 'C5'], melodyPool: ['C5', 'D5', 'E5', 'G5', 'C6'] }
+        ]
+      },
+      sleep: {
+        title: '🌙 수면',
+        desc: '뇌파를 이완시키고 깊은 잠으로 이끄는 몽환적인 앰비언트 패드',
+        timeSignature: 4,
+        bpm: 40, // 초저속 슬로우 호흡 템포
+        reverbTime: 4.5, // 깊은 밤 우주 공간 같은 롱 리버브
+        isAmbient: true,
+        // 마음을 가라앉히는 따뜻한 9도 서스테인 코드 (Ebmaj9, Abmaj7, Cm9, Bb sus4)
+        ambientChords: [
+          [155.56, 196.00, 233.08, 293.66], // Ebmaj9
+          [103.83, 155.56, 207.65, 261.63], // Abmaj7
+          [130.81, 196.00, 233.08, 293.66], // Cm9
+          [116.54, 174.61, 233.08, 261.63]  // Bbsus4
+        ]
+      }
+    };
+
+    // ========================================================
+    // 2. 그랜드 피아노 어쿠스틱 사운드 물리 합성 엔진
+    // ========================================================
+    let audioCtx = null;
+    let masterGain = null;
+    let reverbNode = null;
+    let isPlaying = false;
+    let currentMoodKey = 'chill';
+    let playbackTimer = null;
+    let currentMeasure = 0;
+    let currentBeat = 0;
+
+    let noiseNode = null;
+    let noiseGain = null;
+
+    // 비주얼 건반 생성
+    const pianoKeysContainer = document.getElementById('pianoKeys');
+    const TOTAL_KEYS = 24;
+    for (let i = 0; i < TOTAL_KEYS; i++) {
+      const key = document.createElement('div');
+      key.className = 'key-bar';
+      pianoKeysContainer.appendChild(key);
+    }
+    const keyBars = document.querySelectorAll('.key-bar');
+
+    function initAudioEngine() {
+      if (!audioCtx) {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtxClass();
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+
+        // CPU 부담 없는 가볍고 맑은 공간계 딜레이 에코 (무한 재생 최적화)
+        const delay = audioCtx.createDelay();
+        delay.delayTime.setValueAtTime(0.38, audioCtx.currentTime);
+
+        const feedback = audioCtx.createGain();
+        feedback.gain.setValueAtTime(0.32, audioCtx.currentTime);
+
+        const delayFilter = audioCtx.createBiquadFilter();
+        delayFilter.type = 'lowpass';
+        delayFilter.frequency.setValueAtTime(1600, audioCtx.currentTime);
+
+        masterGain.connect(delay);
+        delay.connect(delayFilter);
+        delayFilter.connect(feedback);
+        feedback.connect(delay);
+
+        // 마스터 및 딜레이 출력 연결
+        masterGain.connect(audioCtx.destination);
+        delayFilter.connect(audioCtx.destination);
+      }
+    }
+
+    // 어쿠스틱 그랜드/펠트 피아노 타건 음 합성 (완전 자동 가비지 컬렉션 & disconnect 처리)
+    function playPianoNote(noteName, duration = 2.8, velocity = 0.5) {
+      if (!audioCtx || !NOTE_FREQ[noteName]) return;
+      const freq = NOTE_FREQ[noteName];
+      const now = audioCtx.currentTime;
+
+      // 1. 귀에 자극 없는 부드러운 사인 배음
+      const harmonics = [
+        { mult: 1, gain: 1.0, type: 'sine' },
+        { mult: 2, gain: 0.35, type: 'sine' },
+        { mult: 3, gain: 0.08, type: 'sine' }
+      ];
+
+      const noteGain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1400, now);
+      filter.Q.setValueAtTime(1.0, now);
+
+      const activeNodes = [noteGain, filter];
+
+      harmonics.forEach(h => {
+        const osc = audioCtx.createOscillator();
+        const hGain = audioCtx.createGain();
+
+        osc.type = h.type;
+        const detuneCents = (Math.random() - 0.5) * 3;
+        osc.detune.setValueAtTime(detuneCents, now);
+        osc.frequency.setValueAtTime(freq * h.mult, now);
+
+        hGain.gain.setValueAtTime(h.gain, now);
+        osc.connect(hGain);
+        hGain.connect(filter);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.1);
+
+        activeNodes.push(osc, hGain);
+      });
+
+      filter.connect(noteGain);
+
+      // 부드러운 타건 엔벨로프
+      noteGain.gain.setValueAtTime(0.0001, now);
+      noteGain.gain.exponentialRampToValueAtTime(velocity * 0.35, now + 0.035);
+      noteGain.gain.exponentialRampToValueAtTime(velocity * 0.12, now + 0.4);
+      noteGain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+
+      noteGain.connect(masterGain);
+
+      // [핵심] 재생 완료 후 모든 오디오 노드를 분리(disconnect)하여 메모리 누수 및 지지직거림 원천 차단
+      setTimeout(() => {
+        activeNodes.forEach(node => {
+          try {
+            if (node.disconnect) node.disconnect();
+          } catch (e) {}
+        });
+        activeNodes.length = 0;
+      }, (duration + 0.2) * 1000);
+
+      highlightKey(freq);
+    }
+
+    // 건반 불빛 애니메이션
+    function highlightKey(freq) {
+      const minFreq = 65;
+      const maxFreq = 1200;
+      const index = Math.min(TOTAL_KEYS - 1, Math.max(0, Math.floor(((freq - minFreq) / (maxFreq - minFreq)) * TOTAL_KEYS)));
+      const key = keyBars[index];
+      if (key) {
+        key.style.height = `${Math.floor(Math.random() * 28) + 20}px`;
+        key.classList.add('active');
+        setTimeout(() => {
+          key.style.height = '10px';
+          key.classList.remove('active');
+        }, 300);
+      }
+    }
+
+    // 몽환적인 수면 앰비언트 패드 화음 합성 (자동 메모리 정리 적용)
+    function playAmbientPadChord(freqArray, duration = 6.5) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const padNodes = [];
+
+      freqArray.forEach(freq => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        const detune = (Math.random() - 0.5) * 6;
+        osc.detune.setValueAtTime(detune, now);
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.09, now + 2.2);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.2);
+
+        padNodes.push(osc, gain);
+        highlightKey(freq);
+      });
+
+      // 수면 패드 노드 자동 disconnect 청소
+      setTimeout(() => {
+        padNodes.forEach(n => {
+          try { if (n.disconnect) n.disconnect(); } catch (e) {}
+        });
+        padNodes.length = 0;
+      }, (duration + 0.5) * 1000);
+    }
+
+    // ========================================================
+    // 3. 클래식 즉흥 연주 스케줄러 (무한 클래식 작곡 루프)
+    // ========================================================
+    function classicPlaybackLoop() {
+      if (!isPlaying) return;
+
+      const mood = CLASSIC_MOODS[currentMoodKey];
+
+      // [수면 모드: 멜로디 타건 없이 파도처럼 밀려오는 앰비언트 패드]
+      if (mood.isAmbient) {
+        const chord = mood.ambientChords[currentMeasure % mood.ambientChords.length];
+        playAmbientPadChord(chord, 6.5);
+
+        currentMeasure++;
+        // 5.5초마다 다음 화음으로 부드러운 크로스페이드
+        playbackTimer = setTimeout(classicPlaybackLoop, 5500);
+        return;
+      }
+
+      const beatDuration = (60 / mood.bpm); // 1박자 길이 (초)
+
+      // [모드별 특화 연주 방식]
+      if (currentMoodKey === 'focus') {
+        // === 바흐 스타일: 16분 음표 연속 분산화음(Arpeggio) ===
+        const stepTime = beatDuration / 2; // 8분/16분 음표 단위
+        const prog = mood.progressions[currentMeasure % mood.progressions.length];
+        const noteName = prog.arpeggio[currentBeat % prog.arpeggio.length];
+
+        playPianoNote(noteName, stepTime * 3.5, 0.55);
+
+        currentBeat++;
+        if (currentBeat >= prog.arpeggio.length) {
+          currentBeat = 0;
+          currentMeasure++;
+        }
+        playbackTimer = setTimeout(classicPlaybackLoop, stepTime * 1000);
+        return;
+      }
+
+      // === 왈츠/녹턴 스타일: 왼손 화음 반주 + 오른손 서정적 멜로디 ===
+      const prog = mood.progressions[currentMeasure % mood.progressions.length];
+
+      if (currentBeat === 0) {
+        // 1박: 왼손 묵직한 베이스 저음 타건
+        playPianoNote(prog.bass, beatDuration * 3, 0.7);
+
+        // 오른손 멜로디 시작
+        const startMelody = prog.melodyPool[Math.floor(Math.random() * prog.melodyPool.length)];
+        playPianoNote(startMelody, beatDuration * 2.5, 0.65);
+      } else {
+        // 2박, 3박: 왼손 부드러운 화음 반주 (쿵-짝-짝)
+        prog.chord.forEach((chNote, idx) => {
+          setTimeout(() => {
+            if (isPlaying) playPianoNote(chNote, beatDuration * 1.8, 0.35);
+          }, idx * 15);
+        });
+
+        // 오른손 서정적 장식 멜로디
+        if (Math.random() > 0.35) {
+          const melodyNote = prog.melodyPool[Math.floor(Math.random() * prog.melodyPool.length)];
+          const melodyDelay = Math.random() > 0.5 ? (beatDuration * 0.5 * 1000) : 0;
+          setTimeout(() => {
+            if (isPlaying) playPianoNote(melodyNote, beatDuration * 2.0, 0.6);
+          }, melodyDelay);
+        }
+      }
+
+      currentBeat++;
+      if (currentBeat >= mood.timeSignature) {
+        currentBeat = 0;
+        currentMeasure++;
+      }
+
+      playbackTimer = setTimeout(classicPlaybackLoop, beatDuration * 1000);
+    }
+
+    // ========================================================
+    // 4. 무드 전환 및 UI 컨트롤
+    // ========================================================
+    function changeMood(moodKey) {
+      if (currentMoodKey === moodKey) return;
+      currentMoodKey = moodKey;
+
+      document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+
+      const mood = CLASSIC_MOODS[moodKey];
+      document.getElementById('nowTitle').textContent = mood.title;
+      document.getElementById('nowDesc').textContent = mood.desc;
+
+      currentMeasure = 0;
+      currentBeat = 0;
+    }
+
+    function togglePlay() {
+      initAudioEngine();
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const playBtn = document.getElementById('playBtn');
+      const playIcon = document.getElementById('playIcon');
+      const playText = document.getElementById('playText');
+
+      if (!isPlaying) {
+        isPlaying = true;
+        playBtn.classList.add('playing');
+        playIcon.textContent = '❚❚';
+        playText.textContent = '연주 멈추기';
+
+        currentMeasure = 0;
+        currentBeat = 0;
+        classicPlaybackLoop();
+      } else {
+        isPlaying = false;
+        playBtn.classList.remove('playing');
+        playIcon.textContent = '▶';
+        playText.textContent = '피아노 연주 시작';
+
+        if (playbackTimer) clearTimeout(playbackTimer);
+      }
+    }
+
+    function setVolume(val) {
+      if (masterGain && audioCtx) {
+        masterGain.gain.setValueAtTime(parseFloat(val), audioCtx.currentTime);
+      }
+    }
+  </script>
+</body>
+</html>
