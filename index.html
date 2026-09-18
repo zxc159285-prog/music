@@ -410,17 +410,17 @@
       },
       sleep: {
         title: '🌙 수면',
-        desc: '뇌파를 이완시키고 깊은 잠으로 이끄는 몽환적인 앰비언트 패드',
+        desc: '모바일에서도 맑고 은은하게 울리는 몽환적인 수면 앰비언트 패드',
         timeSignature: 4,
-        bpm: 40, // 초저속 슬로우 호흡 템포
-        reverbTime: 4.5, // 깊은 밤 우주 공간 같은 롱 리버브
+        bpm: 40,
+        reverbTime: 4.5,
         isAmbient: true,
-        // 마음을 가라앉히는 따뜻한 9도 서스테인 코드 (Ebmaj9, Abmaj7, Cm9, Bb sus4)
+        // 모바일 스피커 떨림을 방지하는 맑고 투명한 중음역대 힐링 화음 (C4, Eb4, G4, Bb4 등)
         ambientChords: [
-          [155.56, 196.00, 233.08, 293.66], // Ebmaj9
-          [103.83, 155.56, 207.65, 261.63], // Abmaj7
-          [130.81, 196.00, 233.08, 293.66], // Cm9
-          [116.54, 174.61, 233.08, 261.63]  // Bbsus4
+          [261.63, 311.13, 392.00, 466.16], // Cm7 (투명하고 차분한 밤하늘)
+          [233.08, 293.66, 349.23, 440.00], // Bb/D (은은한 온기)
+          [207.65, 261.63, 311.13, 392.00], // Abmaj7 (포근한 이불 감성)
+          [233.08, 261.63, 349.23, 392.00]  // Bbsus4 (평온한 안식)
         ]
       }
     };
@@ -559,27 +559,33 @@
       }
     }
 
-    // 몽환적인 수면 앰비언트 패드 화음 합성 (자동 메모리 정리 적용)
+    // 몽환적인 수면 앰비언트 패드 화음 합성 (모바일 진동 방지 및 맑은 순수 사인파)
     function playAmbientPadChord(freqArray, duration = 6.5) {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       const padNodes = [];
 
+      // 모바일 스피커 진동판을 떨리게 만드는 180Hz 이하 초저음역 차단 필터
+      const cleanFilter = audioCtx.createBiquadFilter();
+      cleanFilter.type = 'highpass';
+      cleanFilter.frequency.setValueAtTime(180, now);
+      cleanFilter.connect(masterGain);
+      padNodes.push(cleanFilter);
+
       freqArray.forEach(freq => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
+        // 잡음 없는 순수 힐링 사인파 (진동 잡음을 유발하는 디튠 배제)
         osc.type = 'sine';
-        const detune = (Math.random() - 0.5) * 6;
-        osc.detune.setValueAtTime(detune, now);
         osc.frequency.setValueAtTime(freq, now);
 
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.09, now + 2.2);
+        gain.gain.linearRampToValueAtTime(0.07, now + 2.0);
         gain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
 
         osc.connect(gain);
-        gain.connect(masterGain);
+        gain.connect(cleanFilter);
 
         osc.start(now);
         osc.stop(now + duration + 0.2);
