@@ -410,17 +410,17 @@
       },
       sleep: {
         title: '🌙 수면',
-        desc: '모바일에서도 맑고 은은하게 울리는 몽환적인 수면 앰비언트 패드',
+        desc: '나른하고 묵직하게 가라앉혀 주는 딥 슬립 앰비언트 패드',
         timeSignature: 4,
-        bpm: 40,
-        reverbTime: 4.5,
+        bpm: 38, // 깊은 호흡에 맞춘 극저속 템포
+        reverbTime: 4.8,
         isAmbient: true,
-        // 모바일 스피커 떨림을 방지하는 맑고 투명한 중음역대 힐링 화음 (C4, Eb4, G4, Bb4 등)
+        // 차분하고 포근하게 감싸주는 3옥타브 따뜻한 중저음 화음 (130Hz ~ 233Hz)
         ambientChords: [
-          [261.63, 311.13, 392.00, 466.16], // Cm7 (투명하고 차분한 밤하늘)
-          [233.08, 293.66, 349.23, 440.00], // Bb/D (은은한 온기)
-          [207.65, 261.63, 311.13, 392.00], // Abmaj7 (포근한 이불 감성)
-          [233.08, 261.63, 349.23, 392.00]  // Bbsus4 (평온한 안식)
+          [130.81, 164.81, 196.00, 246.94], // C3 - E3 - G3 - B3 (Cmaj7의 아늑한 안식)
+          [116.54, 155.56, 174.61, 233.08], // Bb2 - Eb3 - F3 - Bb3 (포근한 이완)
+          [110.00, 146.83, 164.81, 220.00], // A2 - D3 - E3 - A3 (나른한 쉼)
+          [123.47, 155.56, 185.00, 233.08]  // B2 - Eb3 - F#3 - Bb3 (깊은 꿈속)
         ]
       }
     };
@@ -559,33 +559,35 @@
       }
     }
 
-    // 몽환적인 수면 앰비언트 패드 화음 합성 (모바일 진동 방지 및 맑은 순수 사인파)
-    function playAmbientPadChord(freqArray, duration = 6.5) {
+    // 몽환적인 수면 앰비언트 패드 화음 합성 (깊고 나른한 3옥타브 딥 슬립 톤)
+    function playAmbientPadChord(freqArray, duration = 6.8) {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       const padNodes = [];
 
-      // 모바일 스피커 진동판을 떨리게 만드는 180Hz 이하 초저음역 차단 필터
-      const cleanFilter = audioCtx.createBiquadFilter();
-      cleanFilter.type = 'highpass';
-      cleanFilter.frequency.setValueAtTime(180, now);
-      cleanFilter.connect(masterGain);
-      padNodes.push(cleanFilter);
+      // 귓가에 솜이불을 덮은 듯 모서리를 둥글게 깎아주는 웜 로우패스 필터 (420Hz)
+      const warmFilter = audioCtx.createBiquadFilter();
+      warmFilter.type = 'lowpass';
+      warmFilter.frequency.setValueAtTime(420, now);
+      warmFilter.Q.setValueAtTime(0.7, now);
+      warmFilter.connect(masterGain);
+      padNodes.push(warmFilter);
 
       freqArray.forEach(freq => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        // 잡음 없는 순수 힐링 사인파 (진동 잡음을 유발하는 디튠 배제)
+        // 뇌파를 델타파로 유도하는 순수 사인파
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now);
 
+        // 2.5초 동안 서서히 피어오르고 4초 동안 아스라이 사라지는 수면 호흡
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.07, now + 2.0);
+        gain.gain.linearRampToValueAtTime(0.065, now + 2.4);
         gain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
 
         osc.connect(gain);
-        gain.connect(cleanFilter);
+        gain.connect(warmFilter);
 
         osc.start(now);
         osc.stop(now + duration + 0.2);
