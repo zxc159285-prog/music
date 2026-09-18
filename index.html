@@ -410,17 +410,17 @@
       },
       sleep: {
         title: '🌙 수면',
-        desc: '나른하고 묵직하게 가라앉혀 주는 딥 슬립 앰비언트 패드',
+        desc: '쇼팽 녹턴 스타일의 고요하고 나른한 피아노 자장가',
         timeSignature: 4,
-        bpm: 38, // 깊은 호흡에 맞춘 극저속 템포
-        reverbTime: 4.8,
-        isAmbient: true,
-        // 차분하고 포근하게 감싸주는 3옥타브 따뜻한 중저음 화음 (130Hz ~ 233Hz)
-        ambientChords: [
-          [130.81, 164.81, 196.00, 246.94], // C3 - E3 - G3 - B3 (Cmaj7의 아늑한 안식)
-          [116.54, 155.56, 174.61, 233.08], // Bb2 - Eb3 - F3 - Bb3 (포근한 이완)
-          [110.00, 146.83, 164.81, 220.00], // A2 - D3 - E3 - A3 (나른한 쉼)
-          [123.47, 155.56, 185.00, 233.08]  // B2 - Eb3 - F#3 - Bb3 (깊은 꿈속)
+        bpm: 36, // 지극히 느리고 평온한 호흡
+        reverbTime: 4.2,
+        isSleepLullaby: true,
+        // 잡음과 맥놀이가 전혀 없는 단아한 쇼팽 풍 단음/분산 화성
+        progressions: [
+          { bass: 'C3', melody: 'G3', subMelody: 'E4' },
+          { bass: 'A2', melody: 'E3', subMelody: 'C4' },
+          { bass: 'F2', melody: 'C3', subMelody: 'A3' },
+          { bass: 'G2', melody: 'D3', subMelody: 'B3' }
         ]
       }
     };
@@ -613,14 +613,30 @@
 
       const mood = CLASSIC_MOODS[currentMoodKey];
 
-      // [수면 모드: 멜로디 타건 없이 파도처럼 밀려오는 앰비언트 패드]
-      if (mood.isAmbient) {
-        const chord = mood.ambientChords[currentMeasure % mood.ambientChords.length];
-        playAmbientPadChord(chord, 6.5);
+      // [수면 모드: 잡음 없는 쇼팽 녹턴 초슬로우 피아노 자장가]
+      if (mood.isSleepLullaby) {
+        const prog = mood.progressions[currentMeasure % mood.progressions.length];
+        
+        // 1. 깊고 부드러운 베이스 타건 (여운 4초)
+        playPianoNote(prog.bass, 4.5, 0.38);
+
+        // 2. 1.8초 뒤 나른한 멜로디 타건
+        setTimeout(() => {
+          if (isPlaying && currentMoodKey === 'sleep') {
+            playPianoNote(prog.melody, 4.0, 0.32);
+          }
+        }, 1800);
+
+        // 3. 3.4초 뒤 조용한 여운음 타건
+        setTimeout(() => {
+          if (isPlaying && currentMoodKey === 'sleep') {
+            playPianoNote(prog.subMelody, 3.8, 0.28);
+          }
+        }, 3400);
 
         currentMeasure++;
-        // 5.5초마다 다음 화음으로 부드러운 크로스페이드
-        playbackTimer = setTimeout(classicPlaybackLoop, 5500);
+        // 5.2초 뒤 다음 마디로 평온하게 전환
+        playbackTimer = setTimeout(classicPlaybackLoop, 5200);
         return;
       }
 
